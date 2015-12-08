@@ -340,6 +340,10 @@ public class SecorConfig {
         return mProperties.getBoolean(name, defaultValue);
     }
 
+    public String getString(String name, String defaultValue){
+        return mProperties.getString(name, defaultValue);
+    }
+
     private void checkProperty(String name) {
         if (!mProperties.containsKey(name)) {
             throw new RuntimeException("Failed to find required configuration option '" +

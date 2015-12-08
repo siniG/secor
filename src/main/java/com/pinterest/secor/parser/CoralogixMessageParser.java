@@ -23,19 +23,26 @@ import com.pinterest.secor.message.Message;
  */
 public class CoralogixMessageParser extends MessageParser {
     private static final Logger LOG = LoggerFactory.getLogger(DateMessageParser.class);
-    protected static final String defaultFormatter = "yyyy-MM-dd";
+    protected final String defaultFormatter = "yyyy_MM_dd_HH_mm";
     protected static final String companyIdTag = "companyId";
     protected static final String sdkTag = "sdk";
+    private String mFormatter;
+
     public CoralogixMessageParser(SecorConfig config) {
         super(config);
+        mFormatter = mConfig.getString("secor.message.parser.coralogix.formatter",null);
+        if(mFormatter == null){
+            mFormatter = defaultFormatter;
+        }
     }
 
     @Override
     public String[] extractPartitions(Message message) {
         Date date = new Date();
+
         JSONObject jsonObject = (JSONObject) JSONValue.parse(message.getPayload());
 
-        SimpleDateFormat outputDateFormatter = new SimpleDateFormat(defaultFormatter);
+        SimpleDateFormat outputDateFormatter = new SimpleDateFormat(mFormatter);
         String str_date_format = outputDateFormatter.format(date);
         String default_company = "0_" + str_date_format;
 
