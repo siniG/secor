@@ -24,8 +24,11 @@ import com.pinterest.secor.message.Message;
 public class CoralogixMessageParser extends MessageParser {
     private static final Logger LOG = LoggerFactory.getLogger(DateMessageParser.class);
     protected final String defaultFormatter = "yyyy_MM_dd_HH_mm";
+    private static final long ROUND_FIFTEEN_MINUTES = 30*60*1000;
+    protected static final String defaultCompanyId = "0";
     protected static final String companyIdTag = "companyId";
     protected static final String sdkTag = "sdk";
+
     private String mFormatter;
 
     public CoralogixMessageParser(SecorConfig config) {
@@ -38,15 +41,16 @@ public class CoralogixMessageParser extends MessageParser {
 
     @Override
     public String[] extractPartitions(Message message) {
-        Date date = new Date();
-
         JSONObject jsonObject = (JSONObject) JSONValue.parse(message.getPayload());
 
-        SimpleDateFormat outputDateFormatter = new SimpleDateFormat(mFormatter);
-        String str_date_format = outputDateFormatter.format(date);
-        String default_company = "0_" + str_date_format;
+        long timeMs = System.currentTimeMillis();
+        long roundedtimeMs = (timeMs/ROUND_FIFTEEN_MINUTES) * ROUND_FIFTEEN_MINUTES;
+        Date date = new Date(roundedtimeMs);
 
-        String[] result = { default_company };
+        SimpleDateFormat outputDateFormatter = new SimpleDateFormat(mFormatter);
+        String strDateFormat = outputDateFormatter.format(date);
+
+        String[] result = { defaultCompanyId, strDateFormat };
 
         if (jsonObject != null) {
             JSONObject sdkInfo = (JSONObject) jsonObject.get(sdkTag);
@@ -54,10 +58,9 @@ public class CoralogixMessageParser extends MessageParser {
                 Object companyFieldValue =  sdkInfo.get(companyIdTag);
                 if (companyFieldValue != null) {
                     try {
-                        result[0] = companyFieldValue.toString() + "_" + str_date_format;
+                        result[0] = companyFieldValue.toString();
                         return result;
                     } catch (Exception e) {
-
                         LOG.warn("Impossible to convert companyId value {} . Using tag = {} . Using default",
                                 companyFieldValue.toString(), companyIdTag, result[0]);
                     }
@@ -66,5 +69,5 @@ public class CoralogixMessageParser extends MessageParser {
         }
         return result;
     }
-
 }
+
